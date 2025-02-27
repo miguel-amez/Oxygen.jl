@@ -264,6 +264,15 @@ This function determines how we handle all incoming requests
 
 function stream_handler(middleware::Function)
     return function (stream::HTTP.Stream)
+        # Aquí puedes agregar trazas sobre el stream antes de procesarlo
+        @info "Handling connection from: $(stream.remote)"
+
+        # Verificar si el stream está abierto
+        if !isopen(stream)
+            @warn "Stream already closed for: $(stream.remote)"
+            return HTTP.Response(500, "Connection already closed")
+        end
+
         # extract the caller's ip address
         ip, _ = Sockets.getpeername(stream)
         # build up a streamhandler to handle our incoming requests
@@ -272,6 +281,17 @@ function stream_handler(middleware::Function)
         return handle_stream(stream)
     end
 end
+
+#function stream_handler(middleware::Function)
+#    return function (stream::HTTP.Stream)
+#        # extract the caller's ip address
+#        ip, _ = Sockets.getpeername(stream)
+#        # build up a streamhandler to handle our incoming requests
+#        handle_stream = HTTP.streamhandler(middleware |> decorate_request(ip, stream))
+#        # handle the incoming request
+#        return handle_stream(stream)
+#    end
+#end
 
 
 """
